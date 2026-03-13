@@ -32,7 +32,7 @@ import { translations, Language } from './i18n';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('zh');
-  const t = translations[language];
+  const t = useMemo(() => translations[language], [language]);
   const [activeTab, setActiveTab] = useState<'project' | 'simulation' | 'map'>('project');
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [selectedAlgorithms, setSelectedAlgorithms] = useState<string[]>([]);
@@ -50,7 +50,7 @@ export default function App() {
     setProject(details);
     setIsLoading(true);
     try {
-      const recs = await geminiService.recommendAlgorithms(details);
+      const recs = await geminiService.recommendAlgorithms(details, language);
       setRecommendations({ ids: recs.recommendations, reasoning: recs.reasoning });
       // Auto-populate the lab with AI's recommended scheme
       setSelectedAlgorithms(recs.recommendations);
@@ -58,7 +58,7 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   const handleAlgorithmChange = useCallback((ids: string[]) => {
     setSelectedAlgorithms(ids);
@@ -76,8 +76,8 @@ export default function App() {
       setIsSimulating(true);
       try {
         const [validation, newResults] = await Promise.all([
-          geminiService.validateCombination(project, selectedAlgorithms),
-          geminiService.simulateResults(project, selectedAlgorithms)
+          geminiService.validateCombination(project, selectedAlgorithms, language),
+          geminiService.simulateResults(project, selectedAlgorithms, language)
         ]);
         setWarnings(validation.warnings);
         setOverallScore(validation.overallScore);
@@ -89,7 +89,7 @@ export default function App() {
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
-  }, [selectedAlgorithms, project]);
+  }, [selectedAlgorithms, project, language]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans flex overflow-hidden">
@@ -163,14 +163,14 @@ export default function App() {
             <span>MedStats AI</span>
             <ChevronRight size={14} />
             <span className="text-[#1D1D1F] font-medium">
-              {activeTab === 'project' ? (language === 'zh' ? '研究課題設定' : language === 'en' ? 'Project Setup' : '研究課題設定') : activeTab === 'simulation' ? (language === 'zh' ? '統計實驗室 (Stats Lab)' : language === 'en' ? 'Stats Lab' : '統計ラボ') : (language === 'zh' ? '演算法地圖匯出' : language === 'en' ? 'Algorithm Map Export' : 'アルゴリズムマップ出力')}
+              {activeTab === 'project' ? t.setupTitle : activeTab === 'simulation' ? t.labTitle : t.mapTab}
             </span>
           </div>
           
           {project && (
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
-                <span className="text-xs text-[#86868B]">{language === 'zh' ? '當前專案' : language === 'en' ? 'Current Project' : '現在のプロジェクト'}</span>
+                <span className="text-xs text-[#86868B]">{t.currentProject}</span>
                 <span className="text-sm font-semibold text-[#1D1D1F]">{project.title}</span>
               </div>
             </div>
@@ -185,6 +185,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
               >
                 <ProjectForm onSubmit={handleProjectSubmit} initialData={project} isLoading={isLoading} language={language} />
               </motion.div>
@@ -196,6 +197,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
                 className="space-y-8"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -250,6 +252,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
               >
                 <AlgorithmMap 
                   project={project}
@@ -277,13 +280,13 @@ export default function App() {
                 <div className="w-8 h-8 bg-[#0071E3] rounded-lg flex items-center justify-center text-white">
                   <Sparkles size={18} />
                 </div>
-                <h3 className="font-bold">MedStats AI 顧問</h3>
+                <h3 className="font-bold">{t.aiAdvisor}</h3>
               </div>
               <button onClick={() => setIsChatOpen(false)} className="p-2 hover:bg-[#F5F5F7] rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
-            <AIChat project={project} selectedAlgorithms={selectedAlgorithms} />
+            <AIChat project={project} selectedAlgorithms={selectedAlgorithms} language={language} />
           </motion.div>
         )}
       </AnimatePresence>

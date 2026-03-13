@@ -71,7 +71,9 @@ const AlgorithmSelector = memo(({ selectedIds, onChange, recommendations, langua
         <div className="p-4 space-y-6 max-h-[500px] overflow-y-auto">
           {Object.entries(groupedAlgorithms).map(([type, algs]) => (
             <div key={type} className="space-y-3">
-              <h4 className="text-xs font-bold text-[#86868B] uppercase tracking-wider px-2">{type}</h4>
+              <h4 className="text-xs font-bold text-[#86868B] uppercase tracking-wider px-2">
+                {(t.categories as any)[type] || type}
+              </h4>
               <div className="space-y-2">
                 {algs.map(alg => {
                   const isSelected = selectedIds.includes(alg.id);

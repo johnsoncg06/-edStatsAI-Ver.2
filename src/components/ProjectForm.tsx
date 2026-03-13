@@ -17,13 +17,44 @@ interface ProjectFormProps {
 
 export default function ProjectForm({ onSubmit, initialData, isLoading, language }: ProjectFormProps) {
   const t = translations[language];
+  const dataTypes = [
+    { zh: '連續性數據 (Continuous)', en: 'Continuous Data', ja: '連続データ' },
+    { zh: '類別性數據 (Categorical/Binary)', en: 'Categorical/Binary Data', ja: 'カテゴリ/バイナリデータ' },
+    { zh: '離散型/計數數據 (Discrete/Count)', en: 'Discrete/Count Data', ja: '離散/カウントデータ' },
+    { zh: '序位數據 (Ordinal)', en: 'Ordinal Data', ja: '順序データ' },
+    { zh: '存活時間數據 (Time-to-event)', en: 'Time-to-event Data', ja: '生存時間データ' },
+    { zh: '基因組/組學數據 (Genomics/Omics)', en: 'Genomics/Omics Data', ja: 'ゲノミクス/オミクスデータ' },
+    { zh: '醫學影像數據 (Imaging)', en: 'Imaging Data', ja: '画像データ' },
+    { zh: '電子病歷數據 (EHR/Structured)', en: 'EHR/Structured Data', ja: '電子カルテデータ' },
+    { zh: '感測器/流數據 (Sensor/Streaming)', en: 'Sensor/Streaming Data', ja: 'センサー/ストリーミングデータ' },
+    { zh: '多中心/層次數據 (Multi-center/Hierarchical)', en: 'Multi-center/Hierarchical Data', ja: '多施設/階層データ' },
+    { zh: '多組學整合數據 (Multi-omics Integration)', en: 'Multi-omics Integration', ja: 'マルチオミクス統合データ' },
+    { zh: '穿戴式裝置數據 (Wearable Device Data)', en: 'Wearable Device Data', ja: 'ウェアラブルデバイスデータ' }
+  ];
+
+  const studyDesigns = [
+    { zh: '隨機對照試驗 (RCT)', en: 'Randomized Controlled Trial (RCT)', ja: 'ランダム化比較試験 (RCT)' },
+    { zh: '非隨機臨床試驗 (Non-randomized Trial)', en: 'Non-randomized Trial', ja: '非ランダム化臨床試験' },
+    { zh: '交叉設計研究 (Crossover Design)', en: 'Crossover Design', ja: 'クロスオーバーデザイン' },
+    { zh: '析因設計研究 (Factorial Design)', en: 'Factorial Design', ja: '要因デザイン' },
+    { zh: '世代研究 (Cohort Study)', en: 'Cohort Study', ja: 'コホート研究' },
+    { zh: '病例對照研究 (Case-Control Study)', en: 'Case-Control Study', ja: '症例対照研究' },
+    { zh: '橫斷面研究 (Cross-sectional Study)', en: 'Cross-sectional Study', ja: '横断的研究' },
+    { zh: '診斷性試驗 (Diagnostic Study)', en: 'Diagnostic Study', ja: '診断精度管理研究' },
+    { zh: 'Meta 分析 / 系統回顧 (Meta-Analysis)', en: 'Meta-Analysis / Systematic Review', ja: 'メタ分析 / システマティックレビュー' },
+    { zh: '孟德爾隨機化研究 (Mendelian Randomization)', en: 'Mendelian Randomization', ja: 'メンデルランダム化研究' },
+    { zh: '病例報告/系列 (Case Report/Series)', en: 'Case Report / Series', ja: '症例報告 / シリーズ' },
+    { zh: '適應性設計試驗 (Adaptive Design)', en: 'Adaptive Design', ja: '適応的デザイン試験' },
+    { zh: '實務性臨床試驗 (Pragmatic Clinical Trial)', en: 'Pragmatic Clinical Trial', ja: '実用的臨床試験' }
+  ];
+
   const [formData, setFormData] = useState<ProjectDetails>(initialData || {
     title: '',
     description: '',
     goal: '',
-    dataType: '連續性數據 (Continuous)',
+    dataType: dataTypes[0][language],
     sampleSize: '',
-    studyDesign: '隨機對照試驗 (RCT)'
+    studyDesign: studyDesigns[0][language]
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,18 +102,9 @@ export default function ProjectForm({ onSubmit, initialData, isLoading, language
               value={formData.dataType}
               onChange={e => setFormData({ ...formData, dataType: e.target.value })}
             >
-              <option>連續性數據 (Continuous)</option>
-              <option>類別性數據 (Categorical/Binary)</option>
-              <option>離散型/計數數據 (Discrete/Count)</option>
-              <option>序位數據 (Ordinal)</option>
-              <option>存活時間數據 (Time-to-event)</option>
-              <option>基因組/組學數據 (Genomics/Omics)</option>
-              <option>醫學影像數據 (Imaging)</option>
-              <option>電子病歷數據 (EHR/Structured)</option>
-              <option>感測器/流數據 (Sensor/Streaming)</option>
-              <option>多中心/層次數據 (Multi-center/Hierarchical)</option>
-              <option>多組學整合數據 (Multi-omics Integration)</option>
-              <option>穿戴式裝置數據 (Wearable Device Data)</option>
+              {dataTypes.map(dt => (
+                <option key={dt.en} value={dt[language]}>{dt[language]}</option>
+              ))}
             </select>
           </div>
           <div className="space-y-2">
@@ -92,19 +114,9 @@ export default function ProjectForm({ onSubmit, initialData, isLoading, language
               value={formData.studyDesign}
               onChange={e => setFormData({ ...formData, studyDesign: e.target.value })}
             >
-              <option>隨機對照試驗 (RCT)</option>
-              <option>非隨機臨床試驗 (Non-randomized Trial)</option>
-              <option>交叉設計研究 (Crossover Design)</option>
-              <option>析因設計研究 (Factorial Design)</option>
-              <option>世代研究 (Cohort Study)</option>
-              <option>病例對照研究 (Case-Control Study)</option>
-              <option>橫斷面研究 (Cross-sectional Study)</option>
-              <option>診斷性試驗 (Diagnostic Study)</option>
-              <option>Meta 分析 / 系統回顧 (Meta-Analysis)</option>
-              <option>孟德爾隨機化研究 (Mendelian Randomization)</option>
-              <option>病例報告/系列 (Case Report/Series)</option>
-              <option>適應性設計試驗 (Adaptive Design)</option>
-              <option>實務性臨床試驗 (Pragmatic Clinical Trial)</option>
+              {studyDesigns.map(sd => (
+                <option key={sd.en} value={sd[language]}>{sd[language]}</option>
+              ))}
             </select>
           </div>
         </div>

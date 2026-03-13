@@ -39,30 +39,34 @@ export const geminiService = {
   /**
    * Recommends algorithms based on project details
    */
-  async recommendAlgorithms(project: ProjectDetails): Promise<{ recommendations: string[]; reasoning: string }> {
-    const cacheKey = this.getCacheKey('recommend', project);
+  async recommendAlgorithms(project: ProjectDetails, language: string = 'zh'): Promise<{ recommendations: string[]; reasoning: string }> {
+    const cacheKey = this.getCacheKey('recommend', project, language);
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
     const apiKey = getApiKey();
     if (!apiKey) {
-      return { recommendations: [], reasoning: "API Key 缺失。請在 Vercel 設定中新增 VITE_GEMINI_API_KEY 環境變數。" };
+      const msg = language === 'zh' ? "API Key 缺失。請在 Vercel 設定中新增 VITE_GEMINI_API_KEY 環境變數。" : 
+                  language === 'ja' ? "APIキーがありません。Vercelの設定でVITE_GEMINI_API_KEY環境変数を追加してください。" :
+                  "API Key is missing. Please add VITE_GEMINI_API_KEY to your Vercel environment variables.";
+      return { recommendations: [], reasoning: msg };
     }
 
+    const langName = language === 'zh' ? 'Traditional Chinese' : language === 'ja' ? 'Japanese' : 'English';
     const ai = getAI();
     const prompt = `
-      身為一位資深醫學統計專家，請根據以下研究課題推薦適合的統計演算法：
+      As a senior medical statistics expert, please recommend suitable statistical algorithms based on the following project:
       
-      標題：${project.title}
-      描述：${project.description}
-      目標：${project.goal}
-      研究設計：${project.studyDesign}
-      數據類型：${project.dataType}
-      樣本量：${project.sampleSize}
+      Title: ${project.title}
+      Description: ${project.description}
+      Goal: ${project.goal}
+      Study Design: ${project.studyDesign}
+      Data Type: ${project.dataType}
+      Sample Size: ${project.sampleSize}
       
-      請從以下候選名單中選擇最適合的 2-4 個，並說明理由：
+      Please select the most suitable 2-4 algorithms from the following list and explain why:
       ${AVAILABLE_ALGORITHMS.map(a => `- ${a.name} (ID: ${a.id}): ${a.description}`).join('\n')}
       
-      請以 JSON 格式回傳，包含 'recommendations' (ID 陣列) 與 'reasoning' (繁體中文說明)。
+      Please return the response in JSON format, including 'recommendations' (array of IDs) and 'reasoning' (explanation in ${langName}).
     `;
 
     try {
@@ -94,29 +98,30 @@ export const geminiService = {
   /**
    * Validates a combination of selected algorithms and provides an overall score
    */
-  async validateCombination(project: ProjectDetails, selectedIds: string[]): Promise<{ warnings: ValidationWarning[], overallScore: number, summary: string }> {
-    if (selectedIds.length === 0) return { warnings: [], overallScore: 0, summary: "請選擇演算法以開始分析。" };
+  async validateCombination(project: ProjectDetails, selectedIds: string[], language: string = 'zh'): Promise<{ warnings: ValidationWarning[], overallScore: number, summary: string }> {
+    if (selectedIds.length === 0) return { warnings: [], overallScore: 0, summary: language === 'zh' ? "請選擇演算法以開始分析。" : language === 'ja' ? "分析を開始するにはアルゴリズムを選択してください。" : "Please select algorithms to start analysis." };
     
-    const cacheKey = this.getCacheKey('validate-v2', project, selectedIds.sort());
+    const cacheKey = this.getCacheKey('validate-v2', project, { ids: selectedIds.sort(), lang: language });
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
     const apiKey = getApiKey();
-    if (!apiKey) return { warnings: [], overallScore: 0, summary: "API Key 缺失。請在 Vercel 設定中新增 VITE_GEMINI_API_KEY。" };
+    if (!apiKey) return { warnings: [], overallScore: 0, summary: "API Key Missing" };
 
+    const langName = language === 'zh' ? 'Traditional Chinese' : language === 'ja' ? 'Japanese' : 'English';
     const ai = getAI();
     const selectedAlgs = AVAILABLE_ALGORITHMS.filter(a => selectedIds.includes(a.id));
     const prompt = `
-      研究課題：${project.title}
-      研究設計：${project.studyDesign}
-      數據類型：${project.dataType}
-      當前方案組合：${selectedAlgs.map(a => a.name).join(', ')}
+      Project Title: ${project.title}
+      Study Design: ${project.studyDesign}
+      Data Type: ${project.dataType}
+      Selected Algorithms: ${selectedAlgs.map(a => a.name).join(', ')}
       
-      請針對這個「方案組合」進行深度診斷：
-      1. 綜合推薦程度 (0-100 分)
-      2. 潛在問題或衝突 (warnings/errors)
-      3. 方案總結 (繁體中文，說明此組合的優劣勢)
+      Please perform a deep diagnosis of this "algorithm combination":
+      1. Overall Recommendation Score (0-100)
+      2. Potential problems or conflicts (warnings/errors)
+      3. Scheme Summary (explanation of pros and cons in ${langName})
       
-      請以 JSON 格式回傳：
+      Please return in JSON format:
       {
         "overallScore": number,
         "summary": "string",
@@ -167,32 +172,33 @@ export const geminiService = {
   /**
    * Simulates results for selected algorithms
    */
-  async simulateResults(project: ProjectDetails, selectedIds: string[]): Promise<SimulationResult[]> {
+  async simulateResults(project: ProjectDetails, selectedIds: string[], language: string = 'zh'): Promise<SimulationResult[]> {
     if (selectedIds.length === 0) return [];
 
-    const cacheKey = this.getCacheKey('simulate', project, selectedIds.sort());
+    const cacheKey = this.getCacheKey('simulate', project, { ids: selectedIds.sort(), lang: language });
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
     const apiKey = getApiKey();
     if (!apiKey) return [];
 
+    const langName = language === 'zh' ? 'Traditional Chinese' : language === 'ja' ? 'Japanese' : 'English';
     const ai = getAI();
     const selectedAlgs = AVAILABLE_ALGORITHMS.filter(a => selectedIds.includes(a.id));
     const prompt = `
-      請為以下研究課題模擬這些演算法的表現數據：
-      課題：${project.title}
-      研究設計：${project.studyDesign}
-      數據類型：${project.dataType}
-      演算法：${selectedAlgs.map(a => a.name).join(', ')}
+      Please simulate performance data for the following medical research project:
+      Title: ${project.title}
+      Study Design: ${project.studyDesign}
+      Data Type: ${project.dataType}
+      Algorithms: ${selectedAlgs.map(a => a.name).join(', ')}
       
-      請根據醫學統計常識，為每個演算法提供在該研究背景下的模擬表現：
-      1. power (檢定力, 0-1)
-      2. precision (精確度, 0-1)
-      3. complexity (運算複雜度, 0-1)
-      4. recommendationScore (推薦分數, 0-100)
-      5. notes (簡短分析說明，請提及該演算法如何處理 ${project.dataType})
+      Based on medical statistics knowledge, provide simulated performance for each algorithm:
+      1. power (0-1)
+      2. precision (0-1)
+      3. complexity (0-1)
+      4. recommendationScore (0-100)
+      5. notes (short analysis in ${langName}, mentioning how it handles ${project.dataType})
       
-      請以 JSON 格式回傳陣列，每個物件包含 'algorithmId' 與上述五個欄位。
+      Return a JSON array of objects, each containing 'algorithmId' and the five fields above.
     `;
 
     try {
@@ -231,17 +237,18 @@ export const geminiService = {
   /**
    * Chat with the AI assistant
    */
-  async chat(history: { role: 'user' | 'model', parts: { text: string }[] }[], message: string) {
+  async chat(history: { role: 'user' | 'model', parts: { text: string }[] }[], message: string, language: string = 'zh') {
     const apiKey = getApiKey();
     if (!apiKey) {
       throw new Error("API Key 缺失。");
     }
     
+    const langName = language === 'zh' ? 'Traditional Chinese' : language === 'ja' ? 'Japanese' : 'English';
     const ai = getAI();
     const chat = ai.chats.create({
       model: "gemini-3-flash-preview",
       config: {
-        systemInstruction: "你是一位專業的醫學統計顧問，負責協助使用者選擇與理解統計演算法。請使用繁體中文回答，語氣專業且親切。",
+        systemInstruction: `You are a professional medical statistics consultant. Help users select and understand statistical algorithms. Please answer in ${langName}. Keep the tone professional and friendly.`,
       },
       history: history
     });

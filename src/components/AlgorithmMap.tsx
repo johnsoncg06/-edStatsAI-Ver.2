@@ -31,17 +31,17 @@ export default function AlgorithmMap({ project, selectedIds, results, language }
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">{language === 'zh' ? '最終演算法決策地圖' : language === 'en' ? 'Final Algorithm Decision Map' : '最終アルゴリズム決定マップ'}</h2>
-          <p className="text-[#86868B]">{language === 'zh' ? '這是根據您的研究需求所制定的最終統計路徑。' : language === 'en' ? 'This is the final statistical path formulated based on your research needs.' : 'これはあなたの研究ニーズに基づいて策定された最終的な統計パスです。'}</p>
+          <h2 className="text-3xl font-bold tracking-tight">{t.finalMapTitle}</h2>
+          <p className="text-[#86868B]">{t.finalMapDesc}</p>
         </div>
         <div className="flex gap-3">
           <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-white border border-[#D2D2D7] rounded-xl text-sm font-semibold hover:bg-[#F5F5F7] transition-all">
             <Download size={18} />
-            <span>{language === 'zh' ? '匯出地圖' : language === 'en' ? 'Export Map' : 'マップを出力'}</span>
+            <span>{t.exportMap}</span>
           </button>
           <button className="flex items-center gap-2 px-4 py-2 bg-[#0071E3] text-white rounded-xl text-sm font-semibold hover:bg-[#0077ED] transition-all shadow-lg shadow-blue-500/20">
             <Share2 size={18} />
-            <span>{language === 'zh' ? '分享報告' : language === 'en' ? 'Share Report' : 'レポートを共有'}</span>
+            <span>{t.shareReport}</span>
           </button>
         </div>
       </div>
@@ -60,10 +60,10 @@ export default function AlgorithmMap({ project, selectedIds, results, language }
             <h3 className="text-4xl font-black text-[#1D1D1F]">{project.title}</h3>
             <div className="flex justify-center gap-8 text-sm text-[#86868B]">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[#1D1D1F]">{language === 'zh' ? '數據類型:' : language === 'en' ? 'Data Type:' : 'データ型:'}</span> {project.dataType}
+                <span className="font-bold text-[#1D1D1F]">{t.dataType}:</span> {project.dataType}
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[#1D1D1F]">{language === 'zh' ? '樣本量:' : language === 'en' ? 'Sample Size:' : 'サンプルサイズ:'}</span> {project.sampleSize}
+                <span className="font-bold text-[#1D1D1F]">{t.sampleSize}:</span> {project.sampleSize}
               </div>
             </div>
           </div>
@@ -81,7 +81,10 @@ export default function AlgorithmMap({ project, selectedIds, results, language }
             {/* Algorithm Nodes */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
               {selectedAlgs.map((alg, index) => {
+                // Find result by ID, ensuring we handle potential missing results
                 const result = results.find(r => r.algorithmId === alg.id);
+                const score = result?.recommendationScore || (result as any)?.score || 0;
+                
                 return (
                   <motion.div 
                     key={alg.id} 
@@ -95,7 +98,9 @@ export default function AlgorithmMap({ project, selectedIds, results, language }
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <p className="text-[10px] font-bold text-[#0071E3] uppercase tracking-widest mb-1">{alg.type}</p>
+                        <p className="text-[10px] font-bold text-[#0071E3] uppercase tracking-widest mb-1">
+                          {(t.categories as any)[alg.type] || alg.type}
+                        </p>
                         <h4 className="text-xl font-black">{alg.name}</h4>
                       </div>
                       <p className="text-sm text-[#424245] leading-relaxed">{alg.description}</p>
@@ -103,7 +108,7 @@ export default function AlgorithmMap({ project, selectedIds, results, language }
                       <div className="pt-4 border-t border-[#F5F5F7] flex items-center justify-between">
                         <div className="flex flex-col">
                           <span className="text-[10px] text-[#86868B] font-bold uppercase">{language === 'zh' ? '推薦度' : language === 'en' ? 'Rec. Score' : '推奨度'}</span>
-                          <span className="text-lg font-black text-[#0071E3]">{result?.recommendationScore || '--'}%</span>
+                          <span className="text-lg font-black text-[#0071E3]">{score > 0 ? `${score}%` : '--'}</span>
                         </div>
                         <div className="flex flex-col items-end">
                           <span className="text-[10px] text-[#86868B] font-bold uppercase">{language === 'zh' ? '優先級' : language === 'en' ? 'Priority' : '優先順位'}</span>

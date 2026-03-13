@@ -6,12 +6,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectDetails } from '../types';
 import { geminiService } from '../services/geminiService';
+import { Language, translations } from '../i18n';
 import { Send, User, Sparkles, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 interface AIChatProps {
   project: ProjectDetails | null;
   selectedAlgorithms: string[];
+  language: Language;
 }
 
 interface Message {
@@ -19,9 +21,10 @@ interface Message {
   text: string;
 }
 
-export default function AIChat({ project, selectedAlgorithms }: AIChatProps) {
+export default function AIChat({ project, selectedAlgorithms, language }: AIChatProps) {
+  const t = translations[language];
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: '您好！我是您的醫學統計 AI 顧問。您可以詢問關於演算法選擇、數據處理或統計假設的任何問題。' }
+    { role: 'model', text: language === 'zh' ? '您好！我是您的醫學統計 AI 顧問。您可以詢問關於演算法選擇、數據處理或統計假設的任何問題。' : language === 'ja' ? 'こんにちは！あなたの医学統計AIアドバイザーです。アルゴリズムの選択、データ処理、または統計的仮説に関する質問にお答えします。' : 'Hello! I am your medical statistics AI advisor. You can ask any questions about algorithm selection, data processing, or statistical hypotheses.' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -49,10 +52,10 @@ export default function AIChat({ project, selectedAlgorithms }: AIChatProps) {
 
       // Add context about the current project
       const context = project 
-        ? `[當前專案背景: ${project.title}, 目標: ${project.goal}, 已選演算法: ${selectedAlgorithms.join(', ')}] ` 
+        ? `[Context: Title: ${project.title}, Goal: ${project.goal}, Selected Algorithms: ${selectedAlgorithms.join(', ')}] ` 
         : '';
       
-      const stream = await geminiService.chat(history, context + userMessage);
+      const stream = await geminiService.chat(history, context + userMessage, language);
       
       let fullText = '';
       setMessages(prev => [...prev, { role: 'model', text: '' }]);
@@ -67,7 +70,7 @@ export default function AIChat({ project, selectedAlgorithms }: AIChatProps) {
       }
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: '抱歉，我現在無法回應，請稍後再試。' }]);
+      setMessages(prev => [...prev, { role: 'model', text: language === 'zh' ? '抱歉，我現在無法回應，請稍後再試。' : language === 'ja' ? '申し訳ありません。現在回答できません。後でもう一度お試しください。' : 'Sorry, I cannot respond right now. Please try again later.' }]);
     } finally {
       setIsTyping(false);
     }
@@ -112,7 +115,7 @@ export default function AIChat({ project, selectedAlgorithms }: AIChatProps) {
         <div className="relative">
           <input
             type="text"
-            placeholder="詢問 AI 顧問..."
+            placeholder={language === 'zh' ? "詢問 AI 顧問..." : language === 'ja' ? "AIアドバイザーに質問..." : "Ask AI advisor..."}
             className="w-full pl-4 pr-12 py-3 rounded-xl bg-[#F5F5F7] border-none focus:ring-2 focus:ring-[#0071E3] transition-all"
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -126,7 +129,9 @@ export default function AIChat({ project, selectedAlgorithms }: AIChatProps) {
             <Send size={20} />
           </button>
         </div>
-        <p className="mt-2 text-[10px] text-[#86868B] text-center">AI 建議僅供參考，請務必諮詢臨床統計專家。</p>
+        <p className="mt-2 text-[10px] text-[#86868B] text-center">
+          {language === 'zh' ? 'AI 建議僅供參考，請務必諮詢臨床統計專家。' : language === 'ja' ? 'AIのアドバイスは参考用です。必ず臨床統計の専門家に相談してください。' : 'AI advice is for reference only. Always consult a clinical statistics expert.'}
+        </p>
       </div>
     </div>
   );

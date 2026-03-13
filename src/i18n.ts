@@ -38,6 +38,19 @@ export const translations = {
     cons: '缺點',
     suitability: '適用場景',
     language: '語言',
+    currentProject: '當前專案',
+    exportMap: '匯出地圖',
+    shareReport: '分享報告',
+    finalMapTitle: '最終演算法決策地圖',
+    finalMapDesc: '這是根據您的研究需求所制定的最終統計路徑。',
+    categories: {
+      'Descriptive': '描述性統計',
+      'Inferential': '推論性統計',
+      'Predictive': '預測模型',
+      'Advanced': '進階模型',
+      'Causal': '因果推斷',
+      'Machine Learning': '機器學習'
+    }
   },
   en: {
     title: 'MedStats AI',
@@ -71,6 +84,19 @@ export const translations = {
     cons: 'Cons',
     suitability: 'Suitability',
     language: 'Language',
+    currentProject: 'Current Project',
+    exportMap: 'Export Map',
+    shareReport: 'Share Report',
+    finalMapTitle: 'Final Algorithm Decision Map',
+    finalMapDesc: 'This is the final statistical path formulated based on your research needs.',
+    categories: {
+      'Descriptive': 'Descriptive',
+      'Inferential': 'Inferential',
+      'Predictive': 'Predictive',
+      'Advanced': 'Advanced',
+      'Causal': 'Causal',
+      'Machine Learning': 'Machine Learning'
+    }
   },
   ja: {
     title: 'MedStats AI',
@@ -104,5 +130,18 @@ export const translations = {
     cons: 'デメリット',
     suitability: '適用シーン',
     language: '言語',
+    currentProject: '現在のプロジェクト',
+    exportMap: 'マップを出力',
+    shareReport: 'レポートを共有',
+    finalMapTitle: '最終アルゴリズム決定マップ',
+    finalMapDesc: 'これはあなたの研究ニーズに基づいて策定された最終的な統計パスです。',
+    categories: {
+      'Descriptive': '記述統計',
+      'Inferential': '推論統計',
+      'Predictive': '予測モデル',
+      'Advanced': '高度なモデル',
+      'Causal': '因果推論',
+      'Machine Learning': '機械学習'
+    }
   }
 };
