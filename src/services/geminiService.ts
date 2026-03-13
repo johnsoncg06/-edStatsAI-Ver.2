@@ -6,7 +6,25 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProjectDetails, Algorithm, AVAILABLE_ALGORITHMS, SimulationResult, ValidationWarning } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getApiKey = () => {
+  // 在 AI Studio 或某些 Node 環境中
+  if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+    return process.env.GEMINI_API_KEY;
+  }
+  // 在 Vite 部署環境 (Vercel) 中，如果使用者設定了 VITE_GEMINI_API_KEY
+  if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+    return import.meta.env.VITE_GEMINI_API_KEY;
+  }
+  // 如果 Vercel 設定的是 GEMINI_API_KEY (非 VITE_ 開頭)，Vite 預設抓不到，
+  // 除非在 vercel.json 或 vite.config.ts 特別處理。
+  // 但通常建議使用者在 Vercel 設定 VITE_GEMINI_API_KEY。
+  return '';
+};
+
+const getAI = () => {
+  const key = getApiKey();
+  return new GoogleGenAI({ apiKey: key });
+};
 
 // Simple memory cache to avoid redundant AI calls
 const cache = new Map<string, any>();
@@ -25,10 +43,12 @@ export const geminiService = {
     const cacheKey = this.getCacheKey('recommend', project);
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
-    if (!process.env.GEMINI_API_KEY) {
-      return { recommendations: [], reasoning: "請先在設定中配置 GEMINI_API_KEY 以啟用 AI 建議功能。" };
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return { recommendations: [], reasoning: "API Key 缺失。請在 Vercel 設定中新增 VITE_GEMINI_API_KEY 環境變數。" };
     }
 
+    const ai = getAI();
     const prompt = `
       身為一位資深醫學統計專家，請根據以下研究課題推薦適合的統計演算法：
       
@@ -80,8 +100,10 @@ export const geminiService = {
     const cacheKey = this.getCacheKey('validate-v2', project, selectedIds.sort());
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
-    if (!process.env.GEMINI_API_KEY) return { warnings: [], overallScore: 0, summary: "API Key Missing" };
+    const apiKey = getApiKey();
+    if (!apiKey) return { warnings: [], overallScore: 0, summary: "API Key 缺失。請在 Vercel 設定中新增 VITE_GEMINI_API_KEY。" };
 
+    const ai = getAI();
     const selectedAlgs = AVAILABLE_ALGORITHMS.filter(a => selectedIds.includes(a.id));
     const prompt = `
       研究課題：${project.title}
@@ -151,8 +173,10 @@ export const geminiService = {
     const cacheKey = this.getCacheKey('simulate', project, selectedIds.sort());
     if (cache.has(cacheKey)) return cache.get(cacheKey);
 
-    if (!process.env.GEMINI_API_KEY) return [];
+    const apiKey = getApiKey();
+    if (!apiKey) return [];
 
+    const ai = getAI();
     const selectedAlgs = AVAILABLE_ALGORITHMS.filter(a => selectedIds.includes(a.id));
     const prompt = `
       請為以下研究課題模擬這些演算法的表現數據：
@@ -208,6 +232,12 @@ export const geminiService = {
    * Chat with the AI assistant
    */
   async chat(history: { role: 'user' | 'model', parts: { text: string }[] }[], message: string) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("API Key 缺失。");
+    }
+    
+    const ai = getAI();
     const chat = ai.chats.create({
       model: "gemini-3-flash-preview",
       config: {
